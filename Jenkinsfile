@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDS = credentials('dockerhub-username') // Jenkins credentials ID
+        DOCKERHUB_CREDS = credentials('docker') // Jenkins credentials ID
         IMAGE_NAME = "flask-docker-app"
         IMAGE_TAG = "latest"
     }
@@ -52,3 +52,4 @@ pipeline {
         }
     }
 }
+
