@@ -1,0 +1,54 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKERHUB_CREDS = credentials('dockerhub-username') // Jenkins credentials ID
+        IMAGE_NAME = "flask-docker-app"
+        IMAGE_TAG = "latest"
+    }
+
+    stages {
+        stage("Checkout from GitHub") {
+            steps {
+                git branch: 'master', url: 'https://github.com/Venkataraju1024/Latest-repo.git'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh "docker build -t ${DOCKERHUB_CREDS_USR}/${IMAGE_NAME}:${IMAGE_TAG} ."
+                }
+            }
+        }
+
+        stage('Push to Docker Hub') {
+            steps {
+                script {
+                    sh "echo ${DOCKERHUB_CREDS_PSW} | docker login -u ${DOCKERHUB_CREDS_USR} --password-stdin"
+                    sh "docker push ${DOCKERHUB_CREDS_USR}/${IMAGE_NAME}:${IMAGE_TAG}"
+                }
+            }
+        }
+
+        stage('Deploy Container') {
+            steps {
+                script {
+                    // Stop & remove old container if running
+                    sh "docker rm -f flask-app || true"
+                    // Run new container
+                    sh "docker run -d -p 5000:5000 --name flask-app ${DOCKERHUB_CREDS_USR}/${IMAGE_NAME}:${IMAGE_TAG}"
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Deployment successful!"
+        }
+        failure {
+            echo "❌ Build/Deploy failed!"
+        }
+    }
+}
