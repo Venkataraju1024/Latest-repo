@@ -1,6 +1,6 @@
 #!/bin/bash
 # Stop the running container if exists
-CONTAINER_NAME="flask-app"
+CONTAINER_NAME="venkataraju1994"
 
 if [ $(docker ps -q -f name=$CONTAINER_NAME) ]; then
     echo "Stopping container $CONTAINER_NAME..."
