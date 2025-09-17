@@ -1,0 +1,38 @@
+version: 0.2
+
+env:
+  parameter-store:
+    DOCKER_REGISTRY_USERNAME: "/flask-app/docker-cred/username"
+    DOCKER_REGISTRY_PASSWORD: "/flask-app/docker-cred/password"
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to AWS ECR...
+      - aws --version
+      - REPOSITORY_URL=619071325574.dkr.ecr.ap-south-1.amazonaws.com/venkataraju1024
+      - aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 619071325574.dkr.ecr.ap-south-1.amazonaws.com
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=build-$(echo $CODEBUILD_BUILD_ID | cut -d ":" -f 2)
+
+  build:
+    commands:
+      - echo "Building Docker image for Flask app started on `date`..."
+      - docker build -t $REPOSITORY_URL:latest .
+      - docker tag $REPOSITORY_URL:latest $REPOSITORY_URL:$IMAGE_TAG
+
+  post_build:
+    commands:
+      - echo "Build completed on `date`"
+      - echo "Pushing Docker images..."
+      - docker push $REPOSITORY_URL:latest
+      - docker push $REPOSITORY_URL:$IMAGE_TAG
+      - echo "Writing imagedefinitions.json for CodeDeploy/CodePipeline"
+      - printf '[{"name":"%s","imageUri":"%s"}]' "venkataraju1024" $REPOSITORY_URL:$IMAGE_TAG > imagedefinitions.json
+      - echo "Printing imagedefinitions.json"
+      - cat imagedefinitions.json
+
+artifacts:
+  files:
+    - imagedefinitions.json
+
